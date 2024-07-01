@@ -96,6 +96,7 @@ namespace Monitoring
         int statusExport = 0;
         int restartingReplication = 0;
         static bool statusWeb = true;
+        static bool connectSQL = true;
 
         void LoadConfig()
         {
@@ -203,6 +204,8 @@ namespace Monitoring
                     }
                     catch (SqlException)
                     {
+                        LogWriteLine($"********** No connection to SQL Server **********");
+                        connectSQL = false;
                         connection.Close();
                     }
                     finally
@@ -216,7 +219,7 @@ namespace Monitoring
 
                 if (ViewCamera.Count == 0)
                 {
-                    sortingViolations = false;
+                    statusViewCamera = false;
                 }
             }
 
@@ -276,27 +279,14 @@ namespace Monitoring
 
         void GetStatusViewCamera(string ip)
         {
-            //try
-            //{
-            //    HttpWebRequest webReq = (HttpWebRequest)WebRequest.Create("http://" + ip);
-            //    webReq.Timeout = 10000;
-            //    webReq.Method = "GET";
-            //    HttpWebResponse webResp = (HttpWebResponse)webReq.GetResponse();
-            //    ViewCamera[ip] = webResp.StatusCode;
-            //}
-            //catch (Exception)
-            //{
-            //    ViewCamera[ip] = "ERROR";
-            //}
-
             PingReply pr = new Ping().Send(ip, 10000);
             if (pr.Status == IPStatus.Success)
             {
-                ViewCamera[ip] = "OK";
+                ViewCamera[ip] = "200";
             }
             else
             {
-                ViewCamera[ip] = "ERROR";
+                ViewCamera[ip] = "404";
             }
             //LogWriteLine($"DEBUG ********** View camera status {ip} = {ViewCamera[ip]} **********");
         }
@@ -505,33 +495,41 @@ namespace Monitoring
             int violations = 0;
             string sqlAlarm = $"SELECT COUNT_BIG(CARS_ID) FROM[AVTO].[dbo].[CARS_VIOLATIONS] WHERE CHECKTIME > '{sqlDateTime:s}'";
 
-            using (SqlConnection connection = new SqlConnection(connectionString))
+            if (connectSQL)
             {
-                try
+                using (SqlConnection connection = new SqlConnection(connectionString))
                 {
-                    connection.Open();
-                    SqlCommand command = new SqlCommand(sqlAlarm, connection);
-                    SqlDataReader reader = command.ExecuteReader();
-                    if (reader.Read())
+                    try
                     {
-                        violations = Convert.ToInt32(reader.GetValue(0));
+                        connection.Open();
+                        SqlCommand command = new SqlCommand(sqlAlarm, connection);
+                        SqlDataReader reader = command.ExecuteReader();
+                        if (reader.Read())
+                        {
+                            violations = Convert.ToInt32(reader.GetValue(0));
+                        }
+                        reader.Close();
                     }
-                    reader.Close();
-                }
-                catch (SqlException)
-                {
-                    connection.Close();
-                }
-                finally
-                {
-                    if (connection.State == ConnectionState.Open)
+                    catch (SqlException)
                     {
                         connection.Close();
+                    }
+                    finally
+                    {
+                        if (connection.State == ConnectionState.Open)
+                        {
+                            connection.Close();
+                        }
                     }
                 }
             }
 
-            string json = "{\"getDateTime\":\"" + DateTime.Now.ToString() + "\",\"violations\": " + violations;
+            string json = "{\"getDateTime\":\"" + DateTime.Now.ToString() + "\"";
+
+            if (connectSQL)
+            {
+                json += ",\"violations\": " + violations;
+            }
 
             if (statusServicesReplicator)
             {
@@ -557,7 +555,7 @@ namespace Monitoring
                 foreach (DictionaryEntry ViewCameraKey in ViewCamera)
                 {
                     c++;
-                    json += "{\"ip\":\"" + ViewCameraKey.Key + "\",\"status\":\"" + ViewCameraKey.Value + "\"}";
+                    json += "{\"ip\":\"" + ViewCameraKey.Key + "\",\"status\":" + ViewCameraKey.Value + "}";
                     if (c < ViewCamera.Count)
                     {
                         json += ",";
@@ -661,7 +659,9 @@ namespace Monitoring
 
         protected override void OnStart(string[] args)
         {
-            LogWriteLine("---------- Service Monitoring START ----------");
+            LogWriteLine("*******************************************************************************");
+            LogWriteLine("************************** Service Monitoring START ***************************");
+            LogWriteLine("*******************************************************************************");
             LoadConfig();
             HashVuolation();
             WEBServer.Start();
@@ -671,7 +671,9 @@ namespace Monitoring
         {
             statusWeb = false;
             WEBServer.Interrupt();
-            LogWriteLine($"---------- Service Monitoring STOP ----------");
+            LogWriteLine("*******************************************************************************");
+            LogWriteLine("*************************** Service Monitoring STOP ***************************");
+            LogWriteLine("*******************************************************************************");
         }
     }
 }
