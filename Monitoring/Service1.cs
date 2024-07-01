@@ -309,7 +309,6 @@ namespace Monitoring
                     if (key != null)
                     {
                         ReplicatorCh newStatus = (ReplicatorCh)Replicator[ch];
-                        newStatus.OldLastReplicationTimeFt = newStatus.LastReplicationTimeFt;
                         newStatus.LastReplicationTime = key.GetValue("LastReplicationTime").ToString();
                         newStatus.LastReplicationTimeFt = Convert.ToInt64(key.GetValue("LastReplicationTimeFt"));
 
@@ -330,13 +329,14 @@ namespace Monitoring
             {
                 ReplicatorCh repStatus = (ReplicatorCh)Replicator[key];
 
-                if(repStatus.LastReplicationTimeFt == repStatus.OldLastReplicationTimeFt)
+                if(repStatus.OldLastReplicationTimeFt == repStatus.LastReplicationTimeFt)
                 {
                     restartingReplication++;
                     LogWriteLine($"***** No replication from crossroad {repStatus.host}, last replication time {repStatus.LastReplicationLocalTime} *****");
                 }
                 else
                 {
+                    repStatus.OldLastReplicationTimeFt = repStatus.LastReplicationTimeFt;
                     restartingReplication = 0;
                 }
             }
