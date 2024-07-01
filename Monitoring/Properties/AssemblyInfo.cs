@@ -5,12 +5,12 @@ using System.Runtime.InteropServices;
 // Общие сведения об этой сборке предоставляются следующим набором
 // набора атрибутов. Измените значения этих атрибутов, чтобы изменить сведения,
 // общие сведения об этой сборке.
-[assembly: AssemblyTitle("Monitoring")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyTitle("VTMonitoring")]
+[assembly: AssemblyDescription("Monitoring and Sorting violations into folders")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("Monitoring")]
-[assembly: AssemblyCopyright("Copyright ©  2024")]
+[assembly: AssemblyCompany("8727.ru")]
+[assembly: AssemblyProduct("VTMonitoring")]
+[assembly: AssemblyCopyright("Alex Li Copyright ©  2024")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

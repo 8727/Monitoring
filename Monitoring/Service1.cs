@@ -17,6 +17,7 @@ using System.Data;
 using System.Threading;
 using System.Net;
 using System.Text;
+using System.Net.NetworkInformation;
 
 namespace Monitoring
 {
@@ -98,6 +99,8 @@ namespace Monitoring
 
         void LoadConfig()
         {
+            LogWriteLine("------------------------- Monitoring Service Settings -------------------------");
+            
             using (RegistryKey key = Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Services\VTMonitoring", true))
             {
                 if (key.GetValue("FailureActions") == null)
@@ -261,6 +264,8 @@ namespace Monitoring
                 statusServicesExportTimer.Enabled = true;
                 LogWriteLine($">>>>> Export service monitoring is enabled at intervals of {statusServicesExportIntervalHours} hours.");
             }
+
+            LogWriteLine("-------------------------------------------------------------------------------");
         }
 
         void OnStorageTimer(Object source, ElapsedEventArgs e)
@@ -271,18 +276,29 @@ namespace Monitoring
 
         void GetStatusViewCamera(string ip)
         {
-            try
+            //try
+            //{
+            //    HttpWebRequest webReq = (HttpWebRequest)WebRequest.Create("http://" + ip);
+            //    webReq.Timeout = 10000;
+            //    webReq.Method = "GET";
+            //    HttpWebResponse webResp = (HttpWebResponse)webReq.GetResponse();
+            //    ViewCamera[ip] = webResp.StatusCode;
+            //}
+            //catch (Exception)
+            //{
+            //    ViewCamera[ip] = "ERROR";
+            //}
+
+            PingReply pr = new Ping().Send(ip, 10000);
+            if (pr.Status == IPStatus.Success)
             {
-                HttpWebRequest webReq = (HttpWebRequest)WebRequest.Create("http://" + ip);
-                webReq.Timeout = 5000;
-                webReq.Method = "GET";
-                HttpWebResponse webResp = (HttpWebResponse)webReq.GetResponse();
-                ViewCamera[ip] = webResp.StatusCode;
+                ViewCamera[ip] = "OK";
             }
-            catch (Exception)
+            else
             {
                 ViewCamera[ip] = "ERROR";
             }
+            //LogWriteLine($"DEBUG ********** View camera status {ip} = {ViewCamera[ip]} **********");
         }
 
         void OnViewCameraStatusTimer(Object source, ElapsedEventArgs e)
@@ -290,7 +306,6 @@ namespace Monitoring
             ICollection viewCameraKeys = ViewCamera.Keys;
             foreach (string ipViewCameraKey in viewCameraKeys)
             {
-                LogWriteLine($"********** http://{ipViewCameraKey} **********");
                 GetStatusViewCamera(ipViewCameraKey);
             }
         }
