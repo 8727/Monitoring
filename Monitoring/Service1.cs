@@ -11,7 +11,6 @@ using System.Xml;
 using System.Diagnostics;
 using System.Data.SqlClient;
 using System.Web.Script.Serialization;
-using System.Net.Http;
 using Microsoft.Win32;
 using System.Data;
 using System.Threading;
@@ -159,7 +158,7 @@ namespace Monitoring
                                     replicatorCh.LastReplicationTimeFt = Convert.ToInt64(key_ch.GetValue("LastReplicationTimeFt"));
                                     replicatorCh.OldLastReplicationTimeFt = replicatorCh.LastReplicationTimeFt;
 
-                                    DateTime replicatorTime = DateTime.ParseExact(replicatorCh.LastReplicationTime, "dd.MM.yyyy HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture).Add(+localZone);
+                                    DateTime replicatorTime = DateTime.ParseExact(replicatorCh.LastReplicationTime, "d.M.yyyy H:mm:ss", System.Globalization.CultureInfo.InvariantCulture).Add(+localZone);
                                     string interval = DateTime.Now.Subtract(replicatorTime).TotalSeconds.ToString();
 
                                     replicatorCh.LastReplicationLocalTime = replicatorTime.ToString();
@@ -314,7 +313,7 @@ namespace Monitoring
                         newStatus.LastReplicationTime = key.GetValue("LastReplicationTime").ToString();
                         newStatus.LastReplicationTimeFt = Convert.ToInt64(key.GetValue("LastReplicationTimeFt"));
 
-                        DateTime replicatorTime = DateTime.ParseExact(newStatus.LastReplicationTime, "dd.MM.yyyy HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture).Add(+localZone);
+                        DateTime replicatorTime = DateTime.ParseExact(newStatus.LastReplicationTime, "d.M.yyyy H:mm:ss", System.Globalization.CultureInfo.InvariantCulture).Add(+localZone);
                         string interval = DateTime.Now.Subtract(replicatorTime).TotalSeconds.ToString();
 
                         newStatus.LastReplicationLocalTime = replicatorTime.ToString();
