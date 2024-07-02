@@ -278,14 +278,14 @@ namespace Monitoring
 
         void GetStatusViewCamera(string ip)
         {
-            PingReply pr = new Ping().Send(ip, 10000);
+            PingReply pr = new Ping().Send(ip, 5000);
             if (pr.Status == IPStatus.Success)
             {
-                ViewCamera[ip] = "200";
+                ViewCamera[ip] = "1";
             }
             else
             {
-                ViewCamera[ip] = "404";
+                ViewCamera[ip] = "0";
             }
             //LogWriteLine($"DEBUG ********** View camera status {ip} = {ViewCamera[ip]} **********");
         }
@@ -354,10 +354,8 @@ namespace Monitoring
                 }
                 else
                 {
-                    StopService("VTTrafficReplicator");
-                    StopService("VTViolations");
-                    StartService("VTTrafficReplicator");
-                    StartService("VTViolations");
+                    ReStartService("VTTrafficReplicator");
+                    ReStartService("VTViolations");
                 }
             }
         }
@@ -378,10 +376,8 @@ namespace Monitoring
             if (statusExport == 0)
             {
                 LogWriteLine($"***** Export service, there were no unloading violations for {statusServicesExportIntervalHours} hours. *****");
-                StopService("VTTrafficExport");
-                StopService("VTViolations");
-                StartService("VTTrafficExport");
-                StartService("VTViolations");
+                ReStartService("VTViolations");
+                ReStartService("VTTrafficExport");
             }
             statusExport = 0;
         }
@@ -434,32 +430,30 @@ namespace Monitoring
             }
         }
 
-        void StartService(string serviceName)
-        {
-            ServiceController service = new ServiceController(serviceName);
-            if (service.Status != ServiceControllerStatus.Running)
-            {
-                service.Start();
-                service.WaitForStatus(ServiceControllerStatus.Running, TimeSpan.FromMinutes(2));
-            }
-            LogWriteLine($">>>> Service {serviceName} status >>>> {service.Status} <<<<");
-        }
-
-        void StopService(string serviceName)
+        void ReStartService(string serviceName)
         {
             ServiceController service = new ServiceController(serviceName);
             if (service.Status != ServiceControllerStatus.Stopped)
             {
                 service.Stop();
-                service.WaitForStatus(ServiceControllerStatus.Stopped, TimeSpan.FromMinutes(2));
+                service.WaitForStatus(ServiceControllerStatus.Stopped, TimeSpan.FromMinutes(10));
                 if (service.Status != ServiceControllerStatus.StopPending)
                 {
                     foreach (var process in Process.GetProcessesByName(serviceName))
                     {
                         process.Kill();
-                        LogWriteLine($"********** Service {serviceName} Kill **********");
+                        LogWriteLine($"********** Service {serviceName} KIILL **********");
                     }
                 }
+            }
+            LogWriteLine($">>>> Service {serviceName} status >>>> {service.Status} <<<<");
+
+            Thread.Sleep(5000);
+
+            if (service.Status != ServiceControllerStatus.Running)
+            {
+                service.Start();
+                service.WaitForStatus(ServiceControllerStatus.Running, TimeSpan.FromMinutes(10));
             }
             LogWriteLine($">>>> Service {serviceName} status >>>> {service.Status} <<<<");
         }
